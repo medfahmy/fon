@@ -1,4 +1,4 @@
-use crate::token::{Token, TokenName};
+use crate::token::{Token, TokenName::*};
 
 pub struct Lexer<'a> {
     input: &'a str,
@@ -12,10 +12,12 @@ impl<'a> Iterator for Lexer<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.skip_whitespace();
-        
         self.curr().map(|curr| {
             match curr {
+                '"' => self.read_str(),
                 c if c.is_ascii_digit() => self.read_num(),
+                '=' | '+' | '-' | '*' | '/' => self.read_op(),
+                c if c.is_alphabetic() || c == '_' => self.read_ident(),
                 _ => self.read_symbol(),
             }
         })?
@@ -63,35 +65,68 @@ impl<'a> Lexer<'a> {
         self.input.chars().nth(self.pos + 1)
     }
 
+    fn read_ident(&mut self) -> Option<Token<'a>> {
+        let pos = self.pos;
+        let row = self.row;
+        let col = self.col;
+
+        while let Some(curr) = self.curr() {
+            if curr.is_alphabetic() || curr == '_' {
+                self.read();
+            } else {
+                break;
+            }
+        }
+
+        let value = &self.input[pos..self.pos];
+        let name = match value {
+            "let" => Let,
+            "return" => Return,
+            _ => Ident,
+            // "if" => If,
+        };
+        Some(Token { name, value, row, col })
+    }
+
     fn read_symbol(&mut self) -> Option<Token<'a>> {
         let name = self.curr().map(|curr| {
             match curr {
-                '{' => TokenName::Osq,
-                '}' => TokenName::Csq,
-                '[' => TokenName::Obr,
-                ']' => TokenName::Cbr,
-                '(' => TokenName::Opr,
-                ')' => TokenName::Cpr,
-                ':' => TokenName::Colon,
-                ';' => TokenName::Semi,
+                '{' => Osq,
+                '}' => Csq,
+                '[' => Obr,
+                ']' => Cbr,
+                '(' => Opr,
+                ')' => Cpr,
+                ':' => Colon,
+                ';' => Semi,
                 _ => unreachable!(),
             }
         })?;
-
         let token = Token {
             name,
             value: &self.input[self.pos..self.pos + 1],
             row: self.row,
             col: self.col,
         };
-
         self.read();
-
         Some(token)
     }
 
     fn read_op(&mut self) -> Option<Token<'a>> {
-        todo!()
+        let name = self.curr().map(|curr| {
+            match curr {
+                '=' => Assign,
+                _ => todo!(),
+            }
+        })?;
+        let token = Token {
+            name,
+            value: &self.input[self.pos..self.pos + 1],
+            row: self.row,
+            col: self.col,
+        };
+        self.read();
+        Some(token)
     }
 
     fn read_num(&mut self) -> Option<Token<'a>> {
@@ -106,13 +141,32 @@ impl<'a> Lexer<'a> {
         }
 
         let value = &self.input[pos..self.pos];
-        let name = if value.contains('.') { TokenName::Float } else { TokenName::Int };
-
-        return Some(Token { name, value, row, col });
+        let name = if value.contains('.') { Float } else { Int };
+        Some(Token { name, value, row, col })
     }
 
     fn read_str(&mut self) -> Option<Token<'a>> {
-        todo!()
+        self.read();
+        let pos = self.pos;
+        let row = self.row;
+        let col = self.col;
+
+        while let Some(curr) = self.curr() {
+            if curr == '"' {
+                break;
+            } else {
+                self.read();
+            }
+        }
+
+        let token = Token { 
+            name: Str, 
+            value: &self.input[pos..self.pos], 
+            row, 
+            col,
+        };
+        self.read();
+        Some(token)
     }
 }
 
@@ -127,7 +181,6 @@ impl<'a> Lexer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use TokenName::*;
 
     /*
     let x: Int = 5;
@@ -163,13 +216,35 @@ mod tests {
 
     #[test]
     fn number() {
-        let tokens = lex("123");
-        assert_eq!(tokens, &[Token { name: Int, value: "123", row: 1, col: 1 }]);
+        assert_eq!(lex("123"), &[Token { name: Int, value: "123", row: 1, col: 1 }]);
+        assert_eq!(lex("0.0"), &[Token { name: Float, value: "0.0", row: 1, col: 1 }]);
+        assert_eq!(lex("123.23"), &[Token { name: Float, value: "123.23", row: 1, col: 1 }]);
+    }
 
-        let tokens = lex("0.0");
-        assert_eq!(tokens, &[Token { name: Float, value: "0.0", row: 1, col: 1 }]);
+    #[test]
+    fn str() {
+        assert_eq!(lex("\"hello\""), &[Token { name: Str, value: "hello", row: 1, col: 2 }]);
+    }
 
-        let tokens = lex("123.23");
-        assert_eq!(tokens, &[Token { name: Float, value: "123.23", row: 1, col: 1 }]);
+    #[test]
+    fn ident() {
+        assert_eq!(lex("x"), &[Token { name: Ident, value: "x", row: 1, col: 1 }]);
+        assert_eq!(lex("let"), &[Token { name: Let, value: "let", row: 1, col: 1 }]);
+        assert_eq!(lex("return"), &[Token { name: Return, value: "return", row: 1, col: 1 }]);
+    }
+
+    // #[test]
+    fn let_stmt() {
+        assert_eq!(
+            lex("let x = 1;"), 
+            //   1234567890
+            &[
+                Token { name: Let, value: "let", row: 1, col: 1 },
+                Token { name: Ident, value: "x", row: 1, col: 5 },
+                Token { name: Assign, value: "=", row: 1, col: 7 },
+                Token { name: Let, value: "1", row: 1, col: 9 },
+                Token { name: Semi, value: ";", row: 1, col: 10 },
+            ],
+        );
     }
 }

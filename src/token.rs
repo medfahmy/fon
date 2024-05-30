@@ -2,8 +2,8 @@ use std::fmt::{Display, Formatter, Result};
 
 #[derive(Debug, PartialEq)]
 pub enum TokenName {
-    Let, Ret,
-    Id,
+    Let, Return,
+    Ident,
     Osq, Csq, Obr, Cbr, Opr, Cpr, Otg, Ctg,
     Assign, Plus, Minus, Asterisk, Slash,
     Semi, Colon, Dot,
