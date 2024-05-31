@@ -2,13 +2,16 @@ use std::fmt::{Display, Formatter, Result};
 
 #[derive(Debug, PartialEq)]
 pub enum TokenName {
-    Let, Return,
-    Ident,
     Osq, Csq, Obr, Cbr, Opr, Cpr, Otg, Ctg,
-    Assign, Plus, Minus, Asterisk, Slash,
+    Eq, Add, Sub, Mul, Div,
     Semi, Colon, Dot,
-    Int, Float, Char, Str, 
+    Assign, AddAssign, SubAssign, MulAssign, DivAssign,
+    Bang, And, Or,
+    Let, Return, Ident,
+    Int, Float, Char, Str, List, Map,
+    Data, TypeSignature,
     Fn,
+    Error,
 }
 
 impl Display for TokenName {
@@ -27,6 +30,6 @@ pub struct Token<'a> {
 
 impl Display for Token<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "`{}` {} [{}:{}]", self.name, self.value.to_string(), self.row, self.col)
+        write!(f, "{}(`{}`, [{}:{}])", self.name, self.value.to_string(), self.row, self.col)
     }
 }

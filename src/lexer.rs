@@ -17,7 +17,7 @@ impl<'a> Iterator for Lexer<'a> {
             match curr {
                 '"' => self.read_str(),
                 c if c.is_ascii_digit() => self.read_num(),
-                '=' | '+' | '-' | '*' | '/' => self.read_op(),
+                '=' | '+' | '-' | '*' | '/' | '&' | '|' => self.read_op(),
                 c if c.is_alphabetic() || c == '_' => self.read_ident(),
                 _ => self.read_symbol(),
             }
@@ -90,7 +90,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_symbol(&mut self) -> Option<Token<'a>> {
-        let name = self.curr().map(|curr| {
+        let name = if let Some(curr) = self.curr() {
             match curr {
                 '{' => Osq,
                 '}' => Csq,
@@ -100,9 +100,13 @@ impl<'a> Lexer<'a> {
                 ')' => Cpr,
                 ':' => Colon,
                 ';' => Semi,
-                _ => unreachable!(),
+                '!' => Bang,
+                _ => return None,
             }
-        })?;
+        } else {
+            return None;
+        };
+
         let token = Token {
             name,
             value: &self.input[self.pos..self.pos + 1],
@@ -114,19 +118,80 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_op(&mut self) -> Option<Token<'a>> {
-        let name = self.curr().map(|curr| {
+        let pos = self.pos;
+        let row = self.row;
+        let col = self.col;
+        let name = if let Some(curr) = self.curr() {
             match curr {
-                '=' => Assign,
-                _ => todo!(),
+                '=' => {
+                    if let Some('=') = self.peek() {
+                        self.read();
+                        Eq
+                    } else {
+                        Assign
+                    }
+                }
+                '+' => {
+                    if let Some('=') = self.peek() {
+                        self.read();
+                        AddAssign
+                    } else {
+                        Add
+                    }
+                }
+                '-' => {
+                    if let Some('=') = self.peek() {
+                        self.read();
+                        SubAssign
+                    } else {
+                        Sub
+                    }
+                }
+                '*' => {
+                    if let Some('=') = self.peek() {
+                        self.read();
+                        MulAssign
+                    } else {
+                        Mul
+                    }
+                }
+                '/' => {
+                    if let Some('=') = self.peek() {
+                        self.read();
+                        DivAssign
+                    } else {
+                        Div
+                    }
+                }
+                '&' => {
+                    if let Some('&') = self.peek() {
+                        self.read();
+                        And
+                    } else {
+                        return None;
+                    }
+                }
+                '|' => {
+                    if let Some('|') = self.peek() {
+                        self.read();
+                        Or
+                    } else {
+                        return None;
+                    }
+                }
+                _ => return None,
             }
-        })?;
+        } else {
+            return None;
+        };
+
+        self.read();
         let token = Token {
             name,
-            value: &self.input[self.pos..self.pos + 1],
-            row: self.row,
-            col: self.col,
+            value: &self.input[pos..self.pos],
+            row,
+            col,
         };
-        self.read();
         Some(token)
     }
 
@@ -172,14 +237,6 @@ impl<'a> Lexer<'a> {
         Some(token)
     }
 }
-
-
-
-// it's not useful to single out eof condition. In the parser, you generally handle eof and any other wrong token the same. So, it’s clear to handle one unified error path for both conditions by having a dedicated eof token.
-// it’s better not to pollute the lexer with io::Errors. Working with &str is usually fine. Like, source files are usually smaller than 10 mb, so it’s not a problem to keep them in memory. If there is a requirement to work with arbitrary Read, wrap it into a type that just returns eof on error and communicates the actual error via a side channel.
-// similarly, it’s a good idea to not report lexer errors (malformed tokens) as a Result. Instead, one can return an explicit Error token, or emit error via diagnostic/side channel, or store error flags (like unclosed quotes) in the token itself — that way the lexer doesn’t need to stop after the first error.
-
-
 
 #[cfg(test)]
 mod tests {
@@ -234,6 +291,69 @@ mod tests {
         assert_eq!(lex("x"), &[Token { name: Ident, value: "x", row: 1, col: 1 }]);
         assert_eq!(lex("let"), &[Token { name: Let, value: "let", row: 1, col: 1 }]);
         assert_eq!(lex("return"), &[Token { name: Return, value: "return", row: 1, col: 1 }]);
+    }
+
+    #[test]
+    fn ops() {
+        assert_eq!(lex("x + y"), &[
+            Token { name: Ident, value: "x", row: 1, col: 1 },
+            Token { name: Add, value: "+", row: 1, col: 3 },
+            Token { name: Ident, value: "y", row: 1, col: 5 },
+        ]);
+
+        assert_eq!(lex("x += y"), &[
+            Token { name: Ident, value: "x", row: 1, col: 1 },
+            Token { name: AddAssign, value: "+=", row: 1, col: 3 },
+            Token { name: Ident, value: "y", row: 1, col: 6 },
+        ]);
+
+        assert_eq!(lex("x - y"), &[
+            Token { name: Ident, value: "x", row: 1, col: 1 },
+            Token { name: Sub, value: "-", row: 1, col: 3 },
+            Token { name: Ident, value: "y", row: 1, col: 5 },
+        ]);
+
+        assert_eq!(lex("x -= y"), &[
+            Token { name: Ident, value: "x", row: 1, col: 1 },
+            Token { name: SubAssign, value: "-=", row: 1, col: 3 },
+            Token { name: Ident, value: "y", row: 1, col: 6 },
+        ]);
+
+        assert_eq!(lex("x * y"), &[
+            Token { name: Ident, value: "x", row: 1, col: 1 },
+            Token { name: Mul, value: "*", row: 1, col: 3 },
+            Token { name: Ident, value: "y", row: 1, col: 5 },
+        ]);
+
+        assert_eq!(lex("x *= y"), &[
+            Token { name: Ident, value: "x", row: 1, col: 1 },
+            Token { name: MulAssign, value: "*=", row: 1, col: 3 },
+            Token { name: Ident, value: "y", row: 1, col: 6 },
+        ]);
+
+        assert_eq!(lex("x / y"), &[
+            Token { name: Ident, value: "x", row: 1, col: 1 },
+            Token { name: Div, value: "/", row: 1, col: 3 },
+            Token { name: Ident, value: "y", row: 1, col: 5 },
+        ]);
+
+        assert_eq!(lex("x /= y"), &[
+            Token { name: Ident, value: "x", row: 1, col: 1 },
+            Token { name: DivAssign, value: "/=", row: 1, col: 3 },
+            Token { name: Ident, value: "y", row: 1, col: 6 },
+        ]);
+
+        assert_eq!(lex("x && y"), &[
+            Token { name: Ident, value: "x", row: 1, col: 1 },
+            Token { name: And, value: "&&", row: 1, col: 3 },
+            Token { name: Ident, value: "y", row: 1, col: 6 },
+        ]);
+
+        assert_eq!(lex("x || y"), &[
+            Token { name: Ident, value: "x", row: 1, col: 1 },
+            Token { name: Or, value: "||", row: 1, col: 3 },
+            Token { name: Ident, value: "y", row: 1, col: 6 },
+        ]);
     }
 
     #[test]
