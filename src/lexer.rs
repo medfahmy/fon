@@ -1,5 +1,6 @@
 use crate::token::{Token, TokenName::*};
 
+#[derive(Debug)]
 pub struct Lexer<'a> {
     input: &'a str,
     pos: usize,
@@ -25,7 +26,7 @@ impl<'a> Iterator for Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    fn new(input: &'a str) -> Self {
+    pub fn new(input: &'a str) -> Self {
         Self { 
             input, 
             pos: 0,
@@ -137,6 +138,8 @@ impl<'a> Lexer<'a> {
         while let Some(curr) = self.curr() {
             if curr.is_ascii_digit() || curr == '.' {
                 self.read();
+            } else {
+                break;
             }
         }
 
@@ -161,7 +164,7 @@ impl<'a> Lexer<'a> {
 
         let token = Token { 
             name: Str, 
-            value: &self.input[pos..self.pos], 
+            value: &self.input[pos..self.pos],
             row, 
             col,
         };
@@ -187,8 +190,8 @@ mod tests {
     let y: Float = 5.5;
     let c: Char = '[';
     let s: Str = "hello";
-    let m: Map(Str, Str) : 
-    let add: Fn(Int) -> String
+    let m: Map(Str, Str) = Map("key1": "value1", "key2": "value2");
+    let add: Fn(Int, Int) -> Int = Fn(x, y) -> { x + y };
     */
 
     fn lex(input: &str) -> Vec<Token> {
@@ -233,18 +236,23 @@ mod tests {
         assert_eq!(lex("return"), &[Token { name: Return, value: "return", row: 1, col: 1 }]);
     }
 
-    // #[test]
+    #[test]
     fn let_stmt() {
-        assert_eq!(
-            lex("let x = 1;"), 
-            //   1234567890
-            &[
-                Token { name: Let, value: "let", row: 1, col: 1 },
-                Token { name: Ident, value: "x", row: 1, col: 5 },
-                Token { name: Assign, value: "=", row: 1, col: 7 },
-                Token { name: Let, value: "1", row: 1, col: 9 },
-                Token { name: Semi, value: ";", row: 1, col: 10 },
-            ],
-        );
+        assert_eq!(lex("let x = 1;"), &[
+            Token { name: Let, value: "let", row: 1, col: 1 },
+            Token { name: Ident, value: "x", row: 1, col: 5 },
+            Token { name: Assign, value: "=", row: 1, col: 7 },
+            Token { name: Int, value: "1", row: 1, col: 9 },
+            Token { name: Semi, value: ";", row: 1, col: 10 }
+        ]);
+    }
+
+    #[test]
+    fn return_stmt() {
+        assert_eq!(lex("return x;"), &[
+            Token { name: Return, value: "return", row: 1, col: 1 },
+            Token { name: Ident, value: "x", row: 1, col: 8 },
+            Token { name: Semi, value: ";", row: 1, col: 9 }
+        ]);
     }
 }
