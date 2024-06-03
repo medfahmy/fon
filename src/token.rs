@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
 #[derive(Debug, PartialEq)]
-pub enum TokenName {
+pub enum TokenKind {
     Semi, Colon, Dot,
     Osq, Csq, Obr, Cbr, Opr, Cpr, Otg, Ctg,
     Eq, Add, Sub, Mul, Div,
@@ -15,7 +15,7 @@ pub enum TokenName {
     Error,
 }
 
-impl Display for TokenName {
+impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{:?}", self)
     }
@@ -23,7 +23,7 @@ impl Display for TokenName {
 
 #[derive(Debug, PartialEq)]
 pub struct Token<'a> {
-    pub name: TokenName,
+    pub kind: TokenKind,
     pub value: &'a str,
     pub row: usize,
     pub col: usize,
@@ -34,7 +34,7 @@ impl Display for Token<'_> {
         write!(
             f,
             "{}(`{}`, [{}:{}])",
-            self.name,
+            self.kind,
             self.value.to_string(),
             self.row,
             self.col
