@@ -1,4 +1,5 @@
+#![allow(warnings, unused)]
 pub mod lexer;
 pub mod parser;
-#[allow(warnings, unused)]
 pub mod token;
+pub mod ast;
