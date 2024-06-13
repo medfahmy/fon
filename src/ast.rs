@@ -10,15 +10,30 @@ pub enum PrefixOp {
     Not, Neg,
 }
 
-pub enum Expr<'a> {
-    Ident(&'a str),
-    Prefix(PrefixOp, Box<Expr<'a>>),
-    Infix(InfixOp, Box<Expr<'a>>, Box<Expr<'a>>),
-    Call(&'a str, Box<Expr<'a>>),
+pub enum ExprKind {
+    Ident,
+    Prefix(PrefixOp, Box<ExprKind>),
+    Infix(InfixOp, Box<ExprKind>, Box<ExprKind>),
+    Call(Box<ExprKind>),
 }
 
-pub enum Stmt<'a> {
-    Let(&'a str, Expr<'a>),
-    Return(Expr<'a>),
-    Expr(Expr<'a>),
+pub struct Expr<'a> {
+    id: usize,
+    kind: ExprKind,
+    literal: &'a str,
+}
+
+pub enum StmtKind {
+    Let(ExprKind),
+    Return(ExprKind),
+    Assign,
+    Expr(ExprKind),
+    If(ExprKind, Box<StmtKind>, Box<StmtKind>),
+    Block(Vec<StmtKind>),
+}
+
+pub struct Stmt<'a> {
+    id: usize,
+    kind: StmtKind,
+    literal: &'a str,
 }
