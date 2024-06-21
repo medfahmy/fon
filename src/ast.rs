@@ -1,39 +1,30 @@
-use crate::token::Token;
-
-pub enum InfixOp {
-    Add, Sub, Mul, Div, Rem,
-    And, Or,
-    Eq, Lt, Lte, Gt, Gte,
-}
-
-pub enum PrefixOp {
-    Not, Neg,
-}
-
-pub enum ExprKind {
-    Ident,
-    Prefix(PrefixOp, Box<ExprKind>),
-    Infix(InfixOp, Box<ExprKind>, Box<ExprKind>),
-    Call(Box<ExprKind>),
-}
-
-pub struct Expr<'a> {
-    id: usize,
-    kind: ExprKind,
-    literal: &'a str,
+pub struct AST<'a> {
+    nodes: Vec<Stmt<'a>>,
 }
 
 pub enum StmtKind {
-    Let(ExprKind),
-    Return(ExprKind),
-    Assign,
-    Expr(ExprKind),
-    If(ExprKind, Box<StmtKind>, Box<StmtKind>),
-    Block(Vec<StmtKind>),
+    Let,
+    Return,
+    If,
+    Fn,
+    Expr,
 }
 
 pub struct Stmt<'a> {
-    id: usize,
     kind: StmtKind,
     literal: &'a str,
+    exprs: Vec<Expr<'a>>,
+}
+
+pub enum ExprKind {
+    Prefix,
+    Infix,
+    Ident,
+    Call,
+}
+
+pub struct Expr<'a> {
+    kind: ExprKind, 
+    literal: &'a str,
+    children: Vec<usize>,
 }
