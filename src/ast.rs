@@ -1,5 +1,7 @@
+use crate::token::Token;
+
 pub struct AST<'a> {
-    nodes: Vec<Stmt<'a>>,
+    pub nodes: Vec<Stmt<'a>>,
 }
 
 pub enum StmtKind {
@@ -11,9 +13,9 @@ pub enum StmtKind {
 }
 
 pub struct Stmt<'a> {
-    kind: StmtKind,
-    literal: &'a str,
-    exprs: Vec<Expr<'a>>,
+    pub kind: StmtKind,
+    pub literal: &'a str,
+    pub exprs: Vec<Expr<'a>>,
 }
 
 pub enum ExprKind {
@@ -24,7 +26,7 @@ pub enum ExprKind {
 }
 
 pub struct Expr<'a> {
-    kind: ExprKind, 
-    literal: &'a str,
-    children: Vec<usize>,
+    pub kind: ExprKind, 
+    pub literal: &'a str,
+    pub children: Vec<Expr<'a>>,
 }
