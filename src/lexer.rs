@@ -16,6 +16,7 @@ impl<'a> Iterator for Lexer<'a> {
         self.curr().map(|curr| match curr {
             '=' | '+' | '-' | '*' | '/' | '<' | '>' | '&' | '|' => self.read_op(),
             '"' => self.read_str(),
+            ':' => self.read_type(),
             c if c.is_ascii_digit() => self.read_num(),
             c if c.is_alphabetic() || c == '_' => self.read_ident(),
             _ => self.read_symbol(),
@@ -25,12 +26,7 @@ impl<'a> Iterator for Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
-        Self {
-            input,
-            pos: 0,
-            row: 1,
-            col: 1,
-        }
+        Self { input, pos: 0, row: 1, col: 1 }
     }
 
     fn skip_whitespace(&mut self) {
@@ -115,9 +111,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_num(&mut self) -> Option<Token<'a>> {
-        let pos = self.pos;
-        let row = self.row;
-        let col = self.col;
+        let (pos, row, col) = (self.pos, self.row, self.col);;
 
         while let Some(curr) = self.curr() {
             if curr.is_ascii_digit() || curr == '.' {
@@ -134,9 +128,7 @@ impl<'a> Lexer<'a> {
 
     fn read_str(&mut self) -> Option<Token<'a>> {
         self.read();
-        let pos = self.pos;
-        let row = self.row;
-        let col = self.col;
+        let (pos, row, col) = (self.pos, self.row, self.col);;
 
         while let Some(curr) = self.curr() {
             if curr == '"' {
@@ -157,9 +149,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_op(&mut self) -> Option<Token<'a>> {
-        let pos = self.pos;
-        let row = self.row;
-        let col = self.col;
+        let (pos, row, col) = (self.pos, self.row, self.col);;
         let kind = if let Some(curr) = self.curr() {
             match curr {
                 '=' => if let Some('=') = self.peek() { self.read(); Eq } else { Assign },
@@ -184,6 +174,28 @@ impl<'a> Lexer<'a> {
             row,
             col,
         };
+        Some(token)
+    }
+
+    fn read_type(&mut self) -> Option<Token<'a>> {
+        self.skip_whitespace();
+        let (pos, row, col) = (self.pos, self.row, self.col);
+
+        while let Some(curr) = self.curr() {
+            if curr.is_whitespace() {
+                break;
+            } else {
+                self.read();
+            }
+        }
+
+        let token = Token {
+            kind: Type,
+            value: &self.input[pos..self.pos],
+            row,
+            col,
+        };
+        self.read();
         Some(token)
     }
 }
@@ -353,6 +365,22 @@ mod tests {
                 Token { kind: Ident, value: "x", row: 1, col: 1 },
                 Token { kind: Or, value: "||", row: 1, col: 3 },
                 Token { kind: Ident, value: "y", row: 1, col: 6 },
+            ]
+        );
+    }
+
+    #[test]
+    fn types() {
+        assert_eq!(
+            lex("let x: Int = 1;"),
+            &[
+                Token { kind: Let, value: "let", row: 1, col: 1 },
+                Token { kind: Ident, value: "x", row: 1, col: 5 },
+                Token { kind: Colon, value: ":", row: 1, col: 6 },
+                Token { kind: Type, value: "Int", row: 1, col: 8 },
+                Token { kind: Assign, value: "=", row: 1, col: 12 },
+                Token { kind: Int, value: "1", row: 1, col: 14 },
+                Token { kind: Semi, value: ";", row: 1, col: 10 }
             ]
         );
     }

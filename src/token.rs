@@ -10,7 +10,7 @@ pub enum TokenKind {
     Bang, And, Or,
     Ident, Let, Return, If, Else, For,
     Int, Float, Char, Str, List, Map,
-    Data, TypeSignature,
+    Type, Arrow,
     Fn,
     Error,
 }

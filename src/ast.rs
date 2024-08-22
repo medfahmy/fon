@@ -26,7 +26,7 @@ pub enum ExprKind {
 }
 
 pub struct Expr<'a> {
-    pub kind: ExprKind, 
+    pub kind: ExprKind,
     pub literal: &'a str,
     pub children: Vec<Expr<'a>>,
 }

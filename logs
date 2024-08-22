@@ -1,0 +1,22 @@
+
+  left: [
+    Token { kind: Osq, value: "{", row: 1, col: 1 }, 
+  Token { kind: Csq, value: "}", row: 1, col: 2 }, 
+  Token { kind: Obr, value: "[", row: 1, col: 3 }, 
+  Token { kind: Cbr, value: "]", row: 1, col: 4 }, 
+  Token { kind: Opr, value: "(", row: 1, col: 5 }, 
+  Token { kind: Cpr, value: ")", row: 1, col: 6 }, 
+  Token { kind: Semi, value: ";", row: 1, col: 7 }, 
+  Token { kind: Type, value: ":", row: 1, col: 8 }]
+
+
+ right: [
+     Token { kind: Osq, value: "{", row: 1, col: 1 }, 
+     Token { kind: Csq, value: "}", row: 1, col: 2 }, 
+     Token { kind: Obr, value: "[", row: 1, col: 3 }, 
+     Token { kind: Cbr, value: "]", row: 1, col: 4 }, 
+     Token { kind: Opr, value: "(", row: 1, col: 5 }, 
+     Token { kind: Cpr, value: ")", row: 1, col: 6 }, 
+     Token { kind: Semi, value: ";", row: 1, col: 7 }, 
+     Token { kind: Colon, value: ":", row: 1, col: 8 }]
+

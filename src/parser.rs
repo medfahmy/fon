@@ -1,6 +1,6 @@
+use crate::ast::{Expr, ExprKind, Stmt, StmtKind};
 use crate::lexer::Lexer;
 use crate::token::{Token, TokenKind::*};
-use crate::ast::{Stmt, StmtKind, Expr, ExprKind};
 
 struct Parser<'a> {
     lexer: Lexer<'a>,
@@ -15,7 +15,16 @@ impl<'a> Parser<'a> {
         let curr = lexer.next();
         let peek = lexer.next();
 
-        Self { lexer, curr, peek, curr_id: 0 }
+        Self {
+            lexer,
+            curr,
+            peek,
+            curr_id: 0,
+        }
+    }
+
+    pub fn parse(&self) -> Self {
+        todo!()
     }
 
     fn read_token(&mut self) {
@@ -42,7 +51,7 @@ impl<'a> Parser<'a> {
         self.read_token();
 
         if let Some(curr) = &self.curr {
-            if let Ident =  curr.kind {
+            if let Ident = curr.kind {
                 let ident = Expr {
                     kind: ExprKind::Ident,
                     literal: curr.value,
@@ -84,4 +93,3 @@ impl<'a> Parser<'a> {
         todo!()
     }
 }
-
