@@ -8,7 +8,7 @@ pub enum TokenKind {
     Assign, AddAssign, SubAssign, MulAssign, DivAssign,
     Lt, Lte, Gt, Gte,
     Bang, And, Or,
-    Ident, Let, Return, If, Else, For,
+    Ident, Let, Mut, Return, If, Else, For,
     Int, Float, Char, Str, List, Map,
     Type, Arrow,
     Fn,

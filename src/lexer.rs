@@ -16,7 +16,9 @@ impl<'a> Iterator for Lexer<'a> {
         self.curr().map(|curr| match curr {
             '=' | '+' | '-' | '*' | '/' | '<' | '>' | '&' | '|' => self.read_op(),
             '"' => self.read_str(),
-            ':' => self.read_type(),
+            ':' => {
+                self.read_type(),
+            }
             c if c.is_ascii_digit() => self.read_num(),
             c if c.is_alphabetic() || c == '_' => self.read_ident(),
             _ => self.read_symbol(),
@@ -80,6 +82,7 @@ impl<'a> Lexer<'a> {
             "if" => If,
             "else" => Else,
             "for" => For,
+            "mut" => Mut,
             _ => Ident,
         };
         Some(Token { kind, value, row, col })
@@ -370,22 +373,6 @@ mod tests {
     }
 
     #[test]
-    fn types() {
-        assert_eq!(
-            lex("let x: Int = 1;"),
-            &[
-                Token { kind: Let, value: "let", row: 1, col: 1 },
-                Token { kind: Ident, value: "x", row: 1, col: 5 },
-                Token { kind: Colon, value: ":", row: 1, col: 6 },
-                Token { kind: Type, value: "Int", row: 1, col: 8 },
-                Token { kind: Assign, value: "=", row: 1, col: 12 },
-                Token { kind: Int, value: "1", row: 1, col: 14 },
-                Token { kind: Semi, value: ";", row: 1, col: 10 }
-            ]
-        );
-    }
-
-    #[test]
     fn let_stmt() {
         assert_eq!(
             lex("let x = 1;"),
@@ -395,6 +382,37 @@ mod tests {
                 Token { kind: Assign, value: "=", row: 1, col: 7 },
                 Token { kind: Int, value: "1", row: 1, col: 9 },
                 Token { kind: Semi, value: ";", row: 1, col: 10 }
+            ]
+        );
+
+        assert_eq!(
+            lex("let x: Int = 1;"),
+            //   01234567890123
+            &[
+                Token { kind: Let, value: "let", row: 1, col: 1 },
+                Token { kind: Ident, value: "x", row: 1, col: 5 },
+                Token { kind: Colon, value: ":", row: 1, col: 6 },
+                Token { kind: Type, value: "Int", row: 1, col: 8 },
+                Token { kind: Assign, value: "=", row: 1, col: 11 },
+                Token { kind: Int, value: "1", row: 1, col: 13 },
+                Token { kind: Semi, value: ";", row: 1, col: 14 }
+            ]
+        );
+
+        left: [, Token { kind: Type, value: ":", row: 1, col: 6 }, Token { kind: Ident, value: "Int", row: 1, col: 8 }, Token { kind: Assign, value: "=", row: 1, col: 12 }, Token { kind: Int, value: "1", row: 1, col: 14 }, Token { kind: Semi, value: ";", row: 1, col: 15 }]
+ right: [, Token { kind: Colon, value: ":", row: 1, col: 6 }, Token { kind: Type, value: "Int", row: 1, col: 8 }, Token { kind: Assign, value: "=", row: 1, col: 11 }, Token { kind: Int, value: "1", row: 1, col: 13 }, Token { kind: Semi, value: ";", row: 1, col: 14 }]
+
+
+        assert_eq!(
+            lex("let mut x = 1;"),
+            //   01234567890123
+            &[
+                Token { kind: Let, value: "let", row: 1, col: 1 },
+                Token { kind: Mut, value: "mut", row: 1, col: 4 },
+                Token { kind: Ident, value: "x", row: 1, col: 8 },
+                Token { kind: Assign, value: "=", row: 1, col: 10 },
+                Token { kind: Int, value: "1", row: 1, col: 12 },
+                Token { kind: Semi, value: ";", row: 1, col: 14 }
             ]
         );
     }
